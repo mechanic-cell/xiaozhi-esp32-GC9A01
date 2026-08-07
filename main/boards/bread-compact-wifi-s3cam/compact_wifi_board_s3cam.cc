@@ -1,10 +1,79 @@
+// === KONFIGURASI BOARD DAN PIN ===
+#define CONFIG_LCD_GC9A01_240X240 1
+
+// Konfigurasi Audio INMP441 (Microphone I2S) - SESUAI WIRING USER
+#define AUDIO_INPUT_SAMPLE_RATE  16000
+#define AUDIO_I2S_MIC_GPIO_WS   GPIO_NUM_39 // SW / L/R Clock
+#define AUDIO_I2S_MIC_GPIO_SCK  GPIO_NUM_40 // SCK / Bit Clock
+#define AUDIO_I2S_MIC_GPIO_DIN  GPIO_NUM_41 // SD / Data In
+
+// Konfigurasi Audio MAX98357A (Speaker I2S) - SESUAI WIRING USER
+#define AUDIO_OUTPUT_SAMPLE_RATE 24000
+#define AUDIO_I2S_SPK_GPIO_LRCK GPIO_NUM_21 // LRC / L/R Clock
+#define AUDIO_I2S_SPK_GPIO_BCLK GPIO_NUM_48 // BCLK / Bit Clock
+#define AUDIO_I2S_SPK_GPIO_DOUT GPIO_NUM_47 // DIN / Data Out
+
+// Method I2S
+#define AUDIO_I2S_METHOD_SIMPLEX
+
+// Konfigurasi Pin Board
+#define BUILTIN_LED_GPIO        GPIO_NUM_NC // Dimatikan karena GPIO48 dipakai BCLK
+#define BOOT_BUTTON_GPIO        GPIO_NUM_0
+#define TOUCH_BUTTON_GPIO       GPIO_NUM_NC
+#define VOLUME_UP_BUTTON_GPIO   GPIO_NUM_NC
+#define VOLUME_DOWN_BUTTON_GPIO GPIO_NUM_NC
+
+// Konfigurasi Kamera Bawaan (OV2640)
+#define CAMERA_PIN_D0 GPIO_NUM_11
+#define CAMERA_PIN_D1 GPIO_NUM_9
+#define CAMERA_PIN_D2 GPIO_NUM_8
+#define CAMERA_PIN_D3 GPIO_NUM_10
+#define CAMERA_PIN_D4 GPIO_NUM_12
+#define CAMERA_PIN_D5 GPIO_NUM_18
+#define CAMERA_PIN_D6 GPIO_NUM_17
+#define CAMERA_PIN_D7 GPIO_NUM_16
+#define CAMERA_PIN_XCLK GPIO_NUM_15
+#define CAMERA_PIN_PCLK GPIO_NUM_13
+#define CAMERA_PIN_VSYNC GPIO_NUM_6
+#define CAMERA_PIN_HREF GPIO_NUM_7
+#define CAMERA_PIN_SIOC GPIO_NUM_5
+#define CAMERA_PIN_SIOD GPIO_NUM_4
+#define CAMERA_PIN_PWDN GPIO_NUM_NC
+#define CAMERA_PIN_RESET GPIO_NUM_NC
+#define XCLK_FREQ_HZ 20000000
+
+// Konfigurasi Layar GC9A01 240x240 - PIN SISA YANG AMAN
+#define DISPLAY_CLK_PIN       GPIO_NUM_2
+#define DISPLAY_MOSI_PIN      GPIO_NUM_42
+#define DISPLAY_RST_PIN       GPIO_NUM_1
+#define DISPLAY_DC_PIN        GPIO_NUM_46
+#define DISPLAY_CS_PIN        GPIO_NUM_45
+#define DISPLAY_BACKLIGHT_PIN GPIO_NUM_14
+
+#ifdef CONFIG_LCD_GC9A01_240X240
+#define LCD_TYPE_GC9A01_SERIAL
+#define DISPLAY_WIDTH   240
+#define DISPLAY_HEIGHT  240
+#define DISPLAY_MIRROR_X true
+#define DISPLAY_MIRROR_Y false
+#define DISPLAY_SWAP_XY false
+#define DISPLAY_INVERT_COLOR    true
+#define DISPLAY_RGB_ORDER  LCD_RGB_ELEMENT_ORDER_BGR
+#define DISPLAY_OFFSET_X  0
+#define DISPLAY_OFFSET_Y  0
+#define DISPLAY_BACKLIGHT_OUTPUT_INVERT false
+#define DISPLAY_SPI_MODE 0
+#endif
+
+#define LAMP_GPIO GPIO_NUM_NC
+
+// === INCLUDES ===
 #include "wifi_board.h"
 #include "codecs/no_audio_codec.h"
 #include "display/lcd_display.h"
 #include "system_reset.h"
 #include "application.h"
 #include "button.h"
-#include "config.h"
 #include "mcp_server.h"
 #include "lamp_controller.h"
 #include "led/single_led.h"
@@ -24,7 +93,6 @@
 #if defined(LCD_TYPE_GC9A01_SERIAL)
 #include "esp_lcd_gc9a01.h"
 static const gc9a01_lcd_init_cmd_t gc9107_lcd_init_cmds[] = {
-    //  {cmd, { data }, data_size, delay_ms}
     {0xfe, (uint8_t[]){0x00}, 0, 0},
     {0xef, (uint8_t[]){0x00}, 0, 0},
     {0xb0, (uint8_t[]){0xc0}, 1, 0},
@@ -45,24 +113,17 @@ static const gc9a01_lcd_init_cmd_t gc9107_lcd_init_cmds[] = {
     {0xe7, (uint8_t[]){0x5f}, 1, 0},
     {0xc6, (uint8_t[]){0x21}, 1, 0},
     {0xc7, (uint8_t[]){0x15}, 1, 0},
-    {0xf0,
-    (uint8_t[]){0x1D, 0x38, 0x09, 0x4D, 0x92, 0x2F, 0x35, 0x52, 0x1E, 0x0C,
-                0x04, 0x12, 0x14, 0x1f},
-    14, 0},
-    {0xf1,
-    (uint8_t[]){0x16, 0x40, 0x1C, 0x54, 0xA9, 0x2D, 0x2E, 0x56, 0x10, 0x0D,
-                0x0C, 0x1A, 0x14, 0x1E},
-    14, 0},
+    {0xf0, (uint8_t[]){0x1D, 0x38, 0x09, 0x4D, 0x92, 0x2F, 0x35, 0x52, 0x1E, 0x0C, 0x04, 0x12, 0x14, 0x1f}, 14, 0},
+    {0xf1, (uint8_t[]){0x16, 0x40, 0x1C, 0x54, 0xA9, 0x2D, 0x2E, 0x56, 0x10, 0x0D, 0x0C, 0x1A, 0x14, 0x1E}, 14, 0},
     {0xf4, (uint8_t[]){0x00, 0x00, 0xFF}, 3, 0},
     {0xba, (uint8_t[]){0xFF, 0xFF}, 2, 0},
 };
 #endif
- 
+
 #define TAG "CompactWifiBoardS3Cam"
 
 class CompactWifiBoardS3Cam : public WifiBoard {
 private:
- 
     Button boot_button_;
     LcdDisplay* display_;
     Esp32Camera* camera_;
@@ -81,7 +142,7 @@ private:
     void InitializeLcdDisplay() {
         esp_lcd_panel_io_handle_t panel_io = nullptr;
         esp_lcd_panel_handle_t panel = nullptr;
-        // 液晶屏控制IO初始化
+        
         ESP_LOGD(TAG, "Install panel IO");
         esp_lcd_panel_io_spi_config_t io_config = {};
         io_config.cs_gpio_num = DISPLAY_CS_PIN;
@@ -93,12 +154,12 @@ private:
         io_config.lcd_param_bits = 8;
         ESP_ERROR_CHECK(esp_lcd_new_panel_io_spi(SPI3_HOST, &io_config, &panel_io));
 
-        // 初始化液晶屏驱动芯片
         ESP_LOGD(TAG, "Install LCD driver");
         esp_lcd_panel_dev_config_t panel_config = {};
         panel_config.reset_gpio_num = DISPLAY_RST_PIN;
         panel_config.rgb_ele_order = DISPLAY_RGB_ORDER;
         panel_config.bits_per_pixel = 16;
+        
 #if defined(LCD_TYPE_ILI9341_SERIAL)
         ESP_ERROR_CHECK(esp_lcd_new_panel_ili9341(panel_io, &panel_config, &panel));
 #elif defined(LCD_TYPE_GC9A01_SERIAL)
@@ -112,11 +173,11 @@ private:
 #endif
         
         esp_lcd_panel_reset(panel);
-
         esp_lcd_panel_init(panel);
         esp_lcd_panel_invert_color(panel, DISPLAY_INVERT_COLOR);
         esp_lcd_panel_swap_xy(panel, DISPLAY_SWAP_XY);
         esp_lcd_panel_mirror(panel, DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y);
+        
 #ifdef  LCD_TYPE_GC9A01_SERIAL
         panel_config.vendor_config = &gc9107_vendor_config;
 #endif
@@ -174,7 +235,6 @@ public:
         if (DISPLAY_BACKLIGHT_PIN != GPIO_NUM_NC) {
             GetBacklight()->RestoreBrightness();
         }
-        
     }
 
     virtual Led* GetLed() override {
