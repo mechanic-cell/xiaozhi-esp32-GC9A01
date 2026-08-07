@@ -270,4 +270,4 @@ public:
     }
 };
 
-DECLARE_BOARD(CompactWifiBoardS3Cam);
+DECLARE_BOARD(CompactWifiBoardS3Cam); 
